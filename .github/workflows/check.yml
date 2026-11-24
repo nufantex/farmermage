@@ -15,17 +15,20 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: 簽出程式碼
         uses: actions/checkout@v4
 
-      - name: 設定 Python
+      - name: 設定 Python（含 pip 快取）
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: requirements.txt
 
       - name: 安裝相依套件
-        run: pip install httpx
+        run: pip install -r requirements.txt
 
       - name: 執行連線與瀏覽次數檢查
         run: python check_status.py

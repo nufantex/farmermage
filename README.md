@@ -1,15 +1,15 @@
 # farmermage
 
-每天自動檢查「型農本色」電子期刊（https://www.kaofarmers.tw/farmer-colours/epaper/）12 個網址，共執行 **50 次**：
+每天自動檢查「型農本色」電子期刊（https://www.kaofarmers.tw/farmer-colours/epaper/）**26 個網址**（兩期各 13 個），共執行 **50 次**：
 
-- 連線是否成功（HTTP 200）
-- 頁面顯示的瀏覽次數
-- 自動累積紀錄到 [view_history.csv](view_history.csv)
+- **Vol.54（當期 `epaper/66`）**：主頁 `current-issue` ＋ 文章 `66/560` ～ `571`（13 個網址）
+- **Vol.53（夏季《女農當家 改寫未來》`epaper/65`）**：主頁 `epaper/65` ＋ 文章 `65/548` ～ `559`（13 個網址）
+- 檢查連線是否成功（HTTP 200）、記錄兩期各自的瀏覽次數，並自動累積至 [view_history.csv](view_history.csv)
 
 ## 怎麼看結果
 
-1. **累積趨勢**：直接查看 repo 內的 [view_history.csv](view_history.csv)，每次執行都會自動追加一列（台灣時間、觸發方式、連線成功數、本期瀏覽次數、失敗網址）。
-2. **單次明細**：到 GitHub 專案的 **Actions** 頁面 → 點最新一次執行，即可在 Summary 看到 12 個網址的結果表格；完整 CSV 在同一頁下方的 **Artifacts**，保留 90 天。
+1. **累積趨勢**：直接查看 repo 內的 [view_history.csv](view_history.csv)，每次執行都會自動追加一列（台灣時間、觸發方式、連線成功數、網址總數、本期瀏覽次數、失敗網址、Vol.53瀏覽次數）。
+2. **單次明細**：到 GitHub 專案的 **Actions** 頁面 → 點最新一次執行，即可在 Summary 看到 26 個網址的分期結果表格；完整 CSV 在同一頁下方的 **Artifacts**，保留 90 天。
 3. **異常通知**：有任何網址失敗時，該次執行會標成紅色 ✗，GitHub 會寄信通知（同時仍會寫入 `view_history.csv` 與上傳 CSV）。
 
 ## 排程架構（每天 50 次）
@@ -32,16 +32,15 @@
 
 ## 注意事項
 
-- **瀏覽次數是整期共用的一個計數器**，不是每篇各自計算；每造訪任何一頁都 +1。
-  - 每次完整檢查 12 個網址會讓官方瀏覽數 +12。
-  - 每天執行 50 次合計會為官方瀏覽數帶來約 +600 次瀏覽。
-- 網站會限制同時連線數，腳本刻意「一次一個、間隔 1 秒」逐一檢查，並在網路錯誤時最多重試 2 次。
+- **瀏覽次數是各期獨立、整期共用的計數器**，不是每篇各自計算；每造訪該期任何一頁（含主頁）都 +1。
+  - 每次完整檢查會讓 Vol.54 與 Vol.53 各自 +13。
+- 網站會限制同時連線數，腳本刻意「一次一個、間隔 0.5 秒」逐一檢查，並在網路錯誤時最多重試 2 次；搭配 pip 快取，單次執行控制在 1 分鐘內以符合 GitHub Actions 免費額度。
 
 ## 本機執行
 
 ```bash
-pip install httpx
-python check_status.py             # 檢查真實網站（12 個網址）
+pip install -r requirements.txt
+python check_status.py             # 檢查真實網站（26 個網址）
 python tests/test_check_status.py  # 用本機模擬伺服器測試（不會連到真實網站）
 ```
 
