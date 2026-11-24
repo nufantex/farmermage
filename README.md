@@ -16,16 +16,19 @@
 
 為避免 GitHub Actions 內建 `schedule` 延遲與漏跑，排程改由 **Cloudflare Workers Cron Triggers**（`farmermage-cron`，原始碼見 [`worker/index.js`](worker/index.js)）穩定觸發 GitHub Actions（[`.github/workflows/check.yml`](.github/workflows/check.yml)）的 `workflow_dispatch`：
 
-- `7,37 * * * *`：台灣時間每小時 `:07`、`:37` 自動觸發（一天 48 次，與 `Katharine-s-monitor` 的 `:17` 錯開）
-- `22 4,16 * * *`：台灣時間 `00:22`、`12:22` 各額外觸發 1 次（一天 2 次）
-- **合計每天自動執行 50 次**
+- `7,22,37,52 * * * *` 與 `14,44 4,16 * * *`（共用 2 條 Cron，依分鐘數分流）：
+  - **`nufantex/farmermage`**：每小時 `:07`、`:37` ＋台灣時間 `00:14`、`12:14`（**每天 50 次**）
+  - **`chingfonlee/Katharine-s-monitor`**：每小時 `:22`、`:52` ＋台灣時間 `00:44`、`12:44`（**每天 50 次**）
+- 兩邊全程錯開 7～15 分鐘，避免同時連線到網站
 - 也可以在 Actions 頁面選「每日 50 次檢查型農本色連結」→「Run workflow」手動執行
 
 ### Cloudflare Worker 設定說明
 
 - Worker 名稱：`farmermage-cron`
-- 純文字變數（Vars）：`GITHUB_OWNER=nufantex`、`GITHUB_REPO=farmermage`、`GITHUB_WORKFLOW=check.yml`、`GITHUB_REF=main`
-- 機密變數（Secret）：`GITHUB_TOKEN`（GitHub Fine-grained PAT，僅需授權 `nufantex/farmermage` 的 **Actions: Read and write**）
+- 純文字變數（Vars）：`GITHUB_OWNER`、`GITHUB_REPO`、`GITHUB_WORKFLOW`、`GITHUB_REF`（以及對應的 `*_CHINGFONLEE`）
+- 機密變數（Secrets）：
+  - `GITHUB_TOKEN`（`nufantex/farmermage` 的 **Actions: Read and write**）
+  - `GITHUB_TOKEN_CHINGFONLEE`（`chingfonlee/Katharine-s-monitor` 的 **Actions: Read and write**）
 
 ## 注意事項
 
