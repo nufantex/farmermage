@@ -1,0 +1,56 @@
+name: 每日 50 次檢查型農本色連結
+
+on:
+  schedule:
+    # GitHub Actions 使用 UTC（台灣時間 = UTC+8）
+    # 1. 每小時 :17、:47 執行（避開整點與半點尖峰），一天 48 次
+    - cron: "17,47 * * * *"
+    # 2. 每天 UTC 04:02、16:02（台灣時間 12:02、00:02）各補 1 次，合計每天 50 次
+    - cron: "2 4,16 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: check-status
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 簽出程式碼
+        uses: actions/checkout@v4
+
+      - name: 設定 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 安裝相依套件
+        run: pip install httpx
+
+      - name: 執行連線與瀏覽次數檢查
+        run: python check_status.py
+
+      - name: 上傳本次檢查結果 CSV
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: views-${{ github.run_number }}
+          path: views_*.csv
+          retention-days: 90
+          if-no-files-found: ignore
+
+      - name: 將歷史紀錄寫回 view_history.csv
+        if: always()
+        run: |
+          git config user.name "nufantex"
+          git config user.email "chat.nufantex@gmail.com"
+          git add view_history.csv
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: update view_history.csv"
+            git pull --rebase origin main
+            git push origin main
+          fi
