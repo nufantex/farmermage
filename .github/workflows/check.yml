@@ -1,12 +1,8 @@
 name: 每日 50 次檢查型農本色連結
 
 on:
-  schedule:
-    # GitHub Actions 使用 UTC（台灣時間 = UTC+8）
-    # 1. 每小時 :17、:47 執行（避開整點與半點尖峰），一天 48 次
-    - cron: "17,47 * * * *"
-    # 2. 每天 UTC 04:02、16:02（台灣時間 12:02、00:02）各補 1 次，合計每天 50 次
-    - cron: "2 4,16 * * *"
+  # 由 Cloudflare Workers Cron (farmermage-cron) 每天 50 次穩定呼叫 workflow_dispatch 觸發，
+  # 也可在 Actions 頁面手動點「Run workflow」執行。
   workflow_dispatch:
 
 permissions:

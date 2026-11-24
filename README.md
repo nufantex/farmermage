@@ -12,14 +12,20 @@
 2. **單次明細**：到 GitHub 專案的 **Actions** 頁面 → 點最新一次執行，即可在 Summary 看到 12 個網址的結果表格；完整 CSV 在同一頁下方的 **Artifacts**，保留 90 天。
 3. **異常通知**：有任何網址失敗時，該次執行會標成紅色 ✗，GitHub 會寄信通知（同時仍會寫入 `view_history.csv` 與上傳 CSV）。
 
-## 排程（每天 50 次）
+## 排程架構（每天 50 次）
 
-設定檔位於 [`.github/workflows/check.yml`](.github/workflows/check.yml)：
+為避免 GitHub Actions 內建 `schedule` 延遲與漏跑，排程改由 **Cloudflare Workers Cron Triggers**（`farmermage-cron`，原始碼見 [`worker/index.js`](worker/index.js)）穩定觸發 GitHub Actions（[`.github/workflows/check.yml`](.github/workflows/check.yml)）的 `workflow_dispatch`：
 
-- 每小時台灣時間 `:17`、`:47` 自動執行（一天 48 次，避開整點與半點排程尖峰）
-- 每天台灣時間 `00:02`、`12:02` 各額外執行 1 次（一天 2 次）
+- `17,47 * * * *`：台灣時間每小時 `:17`、`:47` 自動觸發（一天 48 次）
+- `2 4,16 * * *`：台灣時間 `00:02`、`12:02` 各額外觸發 1 次（一天 2 次）
 - **合計每天自動執行 50 次**
 - 也可以在 Actions 頁面選「每日 50 次檢查型農本色連結」→「Run workflow」手動執行
+
+### Cloudflare Worker 設定說明
+
+- Worker 名稱：`farmermage-cron`
+- 純文字變數（Vars）：`GITHUB_OWNER=nufantex`、`GITHUB_REPO=farmermage`、`GITHUB_WORKFLOW=check.yml`、`GITHUB_REF=main`
+- 機密變數（Secret）：`GITHUB_TOKEN`（GitHub Fine-grained PAT，僅需授權 `nufantex/farmermage` 的 **Actions: Read and write**）
 
 ## 注意事項
 
@@ -27,7 +33,6 @@
   - 每次完整檢查 12 個網址會讓官方瀏覽數 +12。
   - 每天執行 50 次合計會為官方瀏覽數帶來約 +600 次瀏覽。
 - 網站會限制同時連線數，腳本刻意「一次一個、間隔 1 秒」逐一檢查，並在網路錯誤時最多重試 2 次。
-- GitHub Actions 的 `schedule` 在平台尖峰時段可能會有幾分鐘延遲，屬正常現象。
 
 ## 本機執行
 
