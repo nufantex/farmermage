@@ -1,0 +1,4 @@
+views_*.csv
+__pycache__/
+tests/view_history.csv
+tests/views_*.csv
