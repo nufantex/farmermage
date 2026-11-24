@@ -5,8 +5,7 @@
     python check_status.py
 
 注意：
-- 為避免觸發網站高並發限制，同時最多僅開啟 2 條連線（Vol.54 與 Vol.53 各 1 條），
-  各期內部仍維持「一次一個、間隔 0.5 秒」逐頁檢查。
+- 網站會限制同時連線數，所以這裡刻意「一次一個、間隔 0.5 秒」。
 - 瀏覽次數是「各期獨立、整期共用」的計數器，不是每篇各自計算；
   每造訪同一期的任何一頁都 +1，因此 Vol.54（13 頁）與 Vol.53（13 頁）會各自遞增。
 """
@@ -17,7 +16,6 @@ import os
 import re
 import sys
 import time
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -106,29 +104,16 @@ def ensure_history_header(history_path: str) -> None:
             csv.writer(f).writerows(upgraded)
 
 
-def check_issue(issue_name: str, urls: list[str]) -> list[dict]:
-    issue_results: list[dict] = []
-    with httpx.Client(headers=HEADERS, timeout=TIMEOUT, follow_redirects=True) as client:
-        for idx, url in enumerate(urls):
-            res = check(client, url, issue=issue_name)
-            issue_results.append(res)
-            views_str = res["瀏覽次數"] if res["瀏覽次數"] is not None else "-"
-            print(f"[{issue_name}] {res['連線']}  {views_str:>8}  {url}  {res['錯誤']}", flush=True)
-            if idx < len(urls) - 1:
-                time.sleep(DELAY)
-    return issue_results
-
-
 def main(issues: dict[str, list[str]] = ISSUES) -> bool:
     results: list[dict] = []
-    max_workers = max(1, min(2, len(issues)))
-    with ThreadPoolExecutor(max_workers=max_workers) as pool:
-        futures = {
-            issue_name: pool.submit(check_issue, issue_name, urls)
-            for issue_name, urls in issues.items()
-        }
-        for issue_name in issues:
-            results.extend(futures[issue_name].result())
+    with httpx.Client(headers=HEADERS, timeout=TIMEOUT, follow_redirects=True) as client:
+        for issue_name, urls in issues.items():
+            for url in urls:
+                res = check(client, url, issue=issue_name)
+                results.append(res)
+                views_str = res["瀏覽次數"] if res["瀏覽次數"] is not None else "-"
+                print(f"[{issue_name}] {res['連線']}  {views_str:>8}  {url}  {res['錯誤']}")
+                time.sleep(DELAY)
 
     now = datetime.now(ZoneInfo("Asia/Taipei"))   # GitHub 雲端主機是 UTC，統一用台灣時間
     out = f"views_{now:%Y%m%d_%H%M%S}.csv"
