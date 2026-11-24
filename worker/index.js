@@ -1,21 +1,3 @@
-/**
- * Cloudflare Worker: farmermage-cron
- *
- * 使用 2 條 Cloudflare Cron Triggers，依 UTC 分鐘數分流，讓兩個專案各自每天執行 50 次
- * 且完全錯開（間隔 7～15 分鐘），不額外消耗 Cloudflare 免費方案的 Cron 名額：
- *
- * - Cron 1: `7,22,37,52 * * * *`（每小時 4 次）
- *   - :07、:37 -> nufantex/farmermage（48 次/天）
- *   - :22、:52 -> chingfonlee/Katharine-s-monitor（48 次/天）
- * - Cron 2: `14,44 4,16 * * *`（台灣時間 00:14、00:44、12:14、12:44）
- *   - :14 -> nufantex/farmermage（+2 = 50 次/天）
- *   - :44 -> chingfonlee/Katharine-s-monitor（+2 = 50 次/天）
- *
- * 所需 Secrets：
- * - GITHUB_TOKEN              （nufantex/farmermage 的 Actions: Read and write）
- * - GITHUB_TOKEN_CHINGFONLEE  （chingfonlee/Katharine-s-monitor 的 Actions: Read and write）
- */
-
 const NUFANTEX_MINUTES = new Set([7, 14, 37]);
 const CHINGFONLEE_MINUTES = new Set([22, 44, 52]);
 
@@ -110,7 +92,6 @@ export default {
         minute
       );
     } else {
-      // 手動於 Dashboard 測試任意分鐘時，分別嘗試觸發已設定 token 的目標
       await Promise.allSettled([
         triggerWorkflow(nufantex, env.GITHUB_TOKEN, controller.cron, minute),
         triggerWorkflow(chingfonlee, env.GITHUB_TOKEN_CHINGFONLEE, controller.cron, minute),

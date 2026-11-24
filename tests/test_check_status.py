@@ -1,8 +1,3 @@
-"""用本機模擬伺服器測試 check_status.py。
-
-模擬伺服器回傳的 HTML 依照 kaofarmers.tw 真實原始碼的結構，
-並模擬「Vol.54（epaper/66）與 Vol.53（epaper/65）各自擁有獨立瀏覽計數器、每次 GET +1」的行為。
-"""
 import csv
 import os
 import sys
@@ -11,24 +6,20 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 os.environ["NO_PROXY"] = "127.0.0.1,localhost"
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-import check_status  # noqa: E402
+import check_status
 
 COUNTERS = {"66": 14603, "65": 46533}
 LOCK = threading.Lock()
 
-PAGE = """<!DOCTYPE html>
-<html lang="zh-Hant"><head><meta charset="utf-8" />
-<title>當期期刊-型農本色-型農大聯盟</title></head><body>
-<div class="btn-group social_share" role="group">
-  <span class="py-3 me-2 text-secondary"><i class="fas fa-share-alt"></i>分享至</span>
-  <a class="btn btn-line" href="#">LINE</a>
-</div>
-<span class="py-3 text-secondary">
-  <i class="fas fa-eye"></i>{views}次
-</span>
-<h3>文章標題</h3>
-<article><p>王祈發說，最難忘的一次經驗是第3次移蜂，共搬了400次蜂箱。</p></article>
-</body></html>"""
+PAGE = (
+    '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /></head><body>'
+    '<div class="btn-group social_share" role="group">'
+    '<span class="py-3 me-2 text-secondary"><i class="fas fa-share-alt"></i>\u5206\u4eab\u81f3</span>'
+    "</div>"
+    '<span class="py-3 text-secondary"><i class="fas fa-eye"></i>{views}\u6b21</span>'
+    "<h3>Title</h3><article><p>Body text 3\u6b21 400\u6b21.</p></article>"
+    "</body></html>"
+)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -57,17 +48,15 @@ def main():
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     base = f"http://127.0.0.1:{srv.server_address[1]}"
 
-    # --- 單元測試：用真實擷取到的片段 ---
-    real = '<span class="py-3 text-secondary"><i class="fas fa-eye"></i>14603次</span>'
+    real = '<span class="py-3 text-secondary"><i class="fas fa-eye"></i>14603\u6b21</span>'
     assert check_status.extract_views(real) == 14603
-    assert check_status.extract_views("<p>沒有計數器，只有第3次</p>") is None
-    assert check_status.extract_views('<i class="fas fa-eye"></i>1,234次') == 1234
+    assert check_status.extract_views("<p>No counter 3\u6b21</p>") is None
+    assert check_status.extract_views('<i class="fas fa-eye"></i>1,234\u6b21') == 1234
     assert len(check_status.ISSUES["Vol.54"]) == 13
     assert len(check_status.ISSUES["Vol.53"]) == 13
     assert len(check_status.URLS) == 26
-    print("extract_views 與 26 網址設定單元測試：通過")
+    print("Unit tests passed")
 
-    # --- 整合測試：Vol.54 (13) + Vol.53 (13) + 404 + 連不上的網址 ---
     check_status.DELAY = 0.02
     test_issues = {
         "Vol.54": [
@@ -95,7 +84,7 @@ def main():
     assert last[2] == "26" and last[3] == "28"
     assert last[4] == "14616", f"Expected Vol.54=14616, got {last[4]}"
     assert last[6] == "46546", f"Expected Vol.53=46546, got {last[6]}"
-    print("雙期獨立計數與 view_history.csv 整合測試：通過")
+    print("Integration tests passed")
     srv.shutdown()
 
 
