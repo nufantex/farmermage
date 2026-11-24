@@ -16,8 +16,8 @@
 
 為避免 GitHub Actions 內建 `schedule` 延遲與漏跑，排程改由 **Cloudflare Workers Cron Triggers**（`farmermage-cron`，原始碼見 [`worker/index.js`](worker/index.js)）穩定觸發 GitHub Actions（[`.github/workflows/check.yml`](.github/workflows/check.yml)）的 `workflow_dispatch`：
 
-- `17,47 * * * *`：台灣時間每小時 `:17`、`:47` 自動觸發（一天 48 次）
-- `2 4,16 * * *`：台灣時間 `00:02`、`12:02` 各額外觸發 1 次（一天 2 次）
+- `7,37 * * * *`：台灣時間每小時 `:07`、`:37` 自動觸發（一天 48 次，與 `Katharine-s-monitor` 的 `:17` 錯開）
+- `22 4,16 * * *`：台灣時間 `00:22`、`12:22` 各額外觸發 1 次（一天 2 次）
 - **合計每天自動執行 50 次**
 - 也可以在 Actions 頁面選「每日 50 次檢查型農本色連結」→「Run workflow」手動執行
 
